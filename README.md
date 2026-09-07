@@ -1,8 +1,12 @@
 # Morbix
 
-Morbix is a symptom-based disease classification system built as the starting phase. Using this repo you will able to completely reproduce it and use a public disease-symptom dataset, clean it, train a classifier, evaluate it, and provide ranked disease predictions from command-line symptom input.
+Morbix is a symptom-based disease classification system built as the starting phase of this project. Using this repository, the complete pipeline can be reproduced from a public disease-symptom dataset, including data preprocessing, model training, evaluation, and ranked disease prediction from command-line symptom input.
 
-The central research question of this project is: **Can an AI system recognize when the available symptom information is insufficient, determine what additional information would be most useful, and improve disease classification by asking targeted follow-up questions compared with a one-shot classifier?** A standard classifier maps the symptoms it receives directly to a prediction. It does not know whether important information is still missing or what it should ask next. The longer-term goal is to study whether specialized agents can improve this process by interpreting natural-language symptom descriptions, gathering missing information through targeted questions, comparing competing predictions, and verifying the final result before committing to it.
+The central research question is:
+
+**Can an AI system recognize when the available symptom information is insufficient, determine what additional information would be most useful, and improve disease classification by asking targeted follow-up questions compared with a one-shot classifier?**
+
+A standard classifier maps the symptoms it receives directly to a prediction. It does not know whether important information is still missing or what should be asked next. The longer-term goal is to study whether an agentic system can support doctors or trained medical staff by interpreting symptom descriptions, gathering missing information through targeted questions, comparing possible disease candidates, and updating its prediction as new evidence becomes available.
 
 ---
 
@@ -26,124 +30,132 @@ The central research question of this project is: **Can an AI system recognize w
 
 ```text
 User symptoms
-     │
-     ▼
+     |
+     v
 SymptomAgent
-     │
-     ▼
+     |
+     v
 DiseasePredictorTool
-     │
-     ▼
+     |
+     v
 DiseasePredictor
-     │
-     ▼
+     |
+     v
 Gaussian Naive Bayes model
-     │
-     ▼
+     |
+     v
 Ranked disease candidates
 ```
 
-The current agent receives a list of symptoms, cleans the input, and passes it to the prediction tool. The tool invokes the trained classifier and returns the top-ranked disease labels. The current agent performs a single prediction step, it does not ask follow-up questions or revise its answer. Those are the capabilities I am looking for in future versions of the system.
+The current agent receives a list of symptoms, cleans the input, and passes it to the prediction tool. The tool converts the recognized symptoms into the feature representation expected by the trained classifier and returns the highest-ranked disease labels.
+
+The current system performs one prediction step. It does not yet ask follow-up questions, track unknown information, or revise its prediction after receiving additional evidence.
 
 ---
 
 ## Dataset
 
-The project uses the following public dataset from Hugging Face:
+The project uses the following public Hugging Face dataset:
 
-```
+```text
 dhivyeshrk/Disease-Symptom-Extensive-Clean
 ```
 
 **Exact revision used:**
 
-```
+```text
 5f2080be444ba0f43c48b923ffc62d3e3b4897f5
 ```
 
 ### Original Dataset
 
 | Property | Value |
-|---|---|
+|---|---:|
 | Rows | 246,945 |
 | Symptom columns | 377 |
 | Disease labels | 773 |
 
-Symptoms are represented as binary values (`1` = present, `0` = absent). The target column is `diseases`.
+Symptoms are represented using binary values:
+
+```text
+1 = symptom present
+0 = symptom absent
+```
+
+The target column is `diseases`.
 
 ### After Cleaning
 
-Before training, the dataset is cleaned by:
+Before training, the dataset is processed by:
 
-- Removing exact duplicate rows
-- Removing rows with no active symptoms
-- Removing disease classes with fewer than 10 unique samples
-- Verifying that all symptom columns contain valid binary values
-- Removing symptom columns that are constant (zero variance)
+- removing exact duplicate rows
+- removing rows with no active symptoms
+- removing disease classes with fewer than 10 unique samples
+- verifying that symptom columns contain valid binary values
+- removing constant symptom columns
 
 | Property | Value |
-|---|---|
+|---|---:|
 | Samples | 188,920 |
 | Symptom features | 320 |
 | Disease classes | 587 |
 
 ### Data Splits
 
-The cleaned data is split using a fixed random seed of `42` with stratification so that every retained disease class is represented across all three sets.
+The cleaned dataset is split using a fixed random seed of `42` with stratification so that every retained disease class is represented in all three sets.
 
 | Split | Samples |
-|---|---|
-| Training (80%) | 151,136 |
-| Validation (10%) | 18,892 |
-| Test (10%) | 18,892 |
+|---|---:|
+| Training, 80% | 151,136 |
+| Validation, 10% | 18,892 |
+| Test, 10% | 18,892 |
 
-More information about the data files is available in [`data/README.md`](data/README.md).
+More information about the generated data files is available in [`data/README.md`](data/README.md).
 
 ---
 
 ## Model
 
-The classifier is **Gaussian Naive Bayes** from scikit-learn.
+The current classifier uses **Gaussian Naive Bayes** from scikit-learn.
 
-It was chosen because it is simple, lightweight, fast to train locally, and naturally produces scores for multiple disease candidates, which is useful for a system that may need to reason over several possibilities rather than committing immediately to a single answer.
+It was chosen because it is simple, lightweight, fast to train locally, and provides class scores that can be used to rank multiple disease candidates.
 
 | Property | Value |
-|---|---|
-| Features used | 320 (all cleaned symptom columns) |
-| Classes | 587 disease labels |
+|---|---:|
+| Features used | 320 |
+| Disease classes | 587 |
 | Training samples | 151,136 |
 
 ### Validation Results
 
 | Metric | Score |
-|---|---|
+|---|---:|
 | Top-1 accuracy | 83.53% |
 | Top-3 accuracy | 95.10% |
 | Top-5 accuracy | 97.63% |
 
-Top-K metrics are reported because the future system may reason over several candidate diseases rather than using only the top prediction.
+Top-K metrics are useful because an extended system may reason over several possible diseases instead of immediately committing to only the highest-ranked prediction.
 
 ---
-
 
 ## Setup
 
 Python 3.10 or newer is recommended.
 
-**1. Clone the repository**
+### 1. Clone the repository
 
 ```bash
-git clone this repository
+git clone <repository-url>
 cd Morbix
 ```
 
-**2. Create and activate a virtual environment**
+### 2. Create a virtual environment
 
 ```bash
-python -m venv .venv
+python3 -m venv .venv
 ```
 
-macOS / Linux:
+macOS or Linux:
 
 ```bash
 source .venv/bin/activate
@@ -155,35 +167,64 @@ Windows:
 .venv\Scripts\activate
 ```
 
-**3. Install dependencies**
+### 3. Install dependencies
 
 ```bash
 pip install -r requirements.txt
 ```
 
+No API keys or environment variables are required for the current system.
+
 ---
 
 ## Usage
 
+If `models/disease_model.joblib` is already available, the system can be run directly:
+
+```bash
+python3 run_solution.py \
+  --symptoms "cough, fever, fatigue" \
+  --show-trace
+```
+
+A different number of ranked candidates can be requested using:
+
+```bash
+python3 run_solution.py \
+  --symptoms "cough, fever, fatigue" \
+  --top-k 3
+```
+
 ### Reproducing Everything From the Dataset
 
-**Step 1 — Preprocess:**
+The full pipeline can also be reproduced from the original dataset.
+
+#### Step 1: Preprocess
 
 ```bash
-python -m src.preprocess
+python3 -m src.preprocess
 ```
 
-**Step 2 — Train:**
+This downloads the dataset, cleans it, creates the train, validation, and test splits, and stores the generated files in `data/processed/`.
+
+#### Step 2: Train
 
 ```bash
-python -m src.train
+python3 -m src.train
 ```
 
-**Step 3 — Run:**
+This trains the Gaussian Naive Bayes classifier and creates:
+
+```text
+models/disease_model.joblib
+models/validation_metrics.json
+```
+
+#### Step 3: Run
 
 ```bash
-python run_solution.py
-  --symptoms "cough, fever, fatigue" 
+python3 run_solution.py \
+  --symptoms "cough, fever, fatigue" \
   --show-trace
 ```
 
@@ -203,17 +244,21 @@ Test set:
 python3 evaluation/evaluate.py --split test
 ```
 
+The evaluation reports Top-1, Top-3, and Top-5 accuracy.
+
 ---
 
 ### Generating a Test Case
 
-Select a real sample from the validation set:
+A real validation example can be generated using:
 
 ```bash
 python3 examples/generate_test_case.py --row 0
 ```
 
-The script prints the true disease label, active symptoms, and a ready-to-run command. Change `--row` to select a different example:
+The script prints the expected disease label, active symptoms, and a ready-to-run command.
+
+A different example can be selected by changing the row number:
 
 ```bash
 python3 examples/generate_test_case.py --row 25
@@ -223,53 +268,67 @@ python3 examples/generate_test_case.py --row 25
 
 ## Current Gaps and Weaknesses
 
-The most significant weakness is how the system handles incomplete symptom information.
+The main limitation of the current system is how it handles incomplete symptom information.
 
-The classifier uses a fixed binary feature vector. Symptoms that are not provided are set to `0`, which is indistinguishable from symptoms that are genuinely absent. The current representation cannot tell the difference between:
+The classifier uses a fixed binary feature vector. Symptoms that are provided are set to `1`, while symptoms that are not provided remain `0`. This means the current representation cannot distinguish between:
 
-- **Symptom is absent** — the patient does not have it
-- **Symptom is unknown** — nobody has asked about it yet
+- **Symptom is absent:** the patient was asked and does not have the symptom.
+- **Symptom is unknown:** the symptom has not been asked about yet.
 
-This can cause predictions to shift significantly when only a small number of symptoms are provided, because missing information is treated the same way as negative evidence
+As a result, missing information can be treated the same way as negative evidence. This can affect predictions when only a small number of symptoms are initially available or when multiple diseases share similar symptom patterns.
 
-Additional limitations:
+Additional limitations include:
 
-- Symptom names must closely match the dataset vocabulary
-- The system has no understanding of alternative descriptions for the same symptom
-- A single prediction is made and the process stops
-- The system cannot ask follow-up questions or request additional information
-- The system cannot identify which unknown symptom would be most useful to ask about next
-- The system cannot maintain or compare competing disease candidates
-- The system cannot revise its prediction after receiving new information
-- There is no independent verification step for the final prediction
-- Gaussian Naive Bayes scores are not calibrated probabilities
-- Removing classes with too few samples reduces coverage from 773 to 587 disease labels
-- Output quality is bounded by the structure and quality of the source dataset
+- symptom names need to closely match the dataset vocabulary
+- alternative or natural-language descriptions of the same symptom may not be recognized
+- the system makes one prediction and stops
+- it cannot determine whether more information is needed
+- it cannot choose which unknown symptom would be most useful to ask about
+- it does not track present, absent, and unknown symptoms separately
+- it cannot revise its prediction after receiving new information
+- there is no independent verification step before returning the ranked candidates
+- Gaussian Naive Bayes scores should not be treated as calibrated confidence values
+- removing classes with too few unique samples reduces coverage from 773 to 587 disease labels
+- prediction quality is limited by the structure and quality of the source dataset
 
-These weaknesses are the primary motivation for extending the system.
+These limitations provide the main motivation for extending the current system.
 
 ---
 
 ## Planned Direction
 
-The proposed next phase will investigate whether a multi-agent architecture can improve classification when the initial symptom information is incomplete. The main focus will be whether the system can recognize uncertainty, identify useful missing information, ask targeted follow-up questions, and revise its prediction as new evidence becomes available.
+The next phase will investigate whether an agentic or multi-agent system can improve assistive disease classification when the initial symptom information is incomplete.
+
+The main focus will be whether the system can:
+
+- interpret natural-language symptom descriptions
+- recognize when the available evidence is insufficient
+- track present, absent, and unknown symptoms
+- identify useful missing information
+- ask targeted follow-up questions
+- update disease candidates as new evidence becomes available
+- verify the final ranked prediction before presenting it to medical staff
+
+The goal is not simply to add multiple agents, but to determine whether active information gathering and multiple reasoning steps provide measurable improvement over the current one-shot approach.
 
 ---
 
 ## Initial Evaluation Plan
 
-The extended system would be compared against the current baseline using the same dataset and identical starting information.
-
-**Planned metrics:**
+The extended system will be compared with the current one-shot system using the same dataset and identical starting symptom information.
 
 | Metric | Description |
 |---|---|
-| Top-1 accuracy | Fraction of cases where the correct disease is the top prediction |
-| Top-3 accuracy | Fraction of cases where the correct disease appears in the top 3 |
-| Partial-symptom accuracy | Accuracy when only a subset of symptoms is initially available |
-| Post-questions accuracy | Accuracy after a fixed number of follow-up questions |
-| Questions to correct result | Average number of questions needed to reach the correct prediction |
-| Task completion rate | Fraction of cases where a final prediction is successfully returned |
+| Top-1 accuracy | Correct disease is the highest-ranked prediction |
+| Top-3 accuracy | Correct disease appears among the top three predictions |
+| Partial-symptom accuracy | Accuracy when only part of the symptom information is initially available |
+| Post-question accuracy | Accuracy after a fixed number of follow-up questions |
+| Questions to correct result | Number of questions required before reaching the correct prediction |
+| Task completion rate | Cases where the system successfully produces a final result |
+| Latency | Time required to reach the final prediction |
 
+A representative experiment would start both systems with the same incomplete symptom set. The current one-shot system would make a prediction immediately, while the extended system would be allowed a limited number of follow-up questions before returning its final ranked candidates.
 
-A representative experiment would start both systems with the same incomplete symptom set. The current baseline would make one prediction immediately, while the agentic system would be allowed a bounded number of follow-up questions before making its final prediction. This makes it possible to measure whether active information gathering actually improves accuracy rather than assuming that a multi-agent architecture is automatically better. If retrieval or other external knowledge sources are later added, additional measures such as faithfulness, context relevance, answer relevance, and cross-source consistency can also be evaluated.
+Improvement would be demonstrated if the extended system achieves better classification accuracy using a small number of relevant follow-up questions without introducing excessive latency or unnecessary interactions.
+
+If external retrieval or additional knowledge sources are later introduced, evaluation can be expanded to include measures such as faithfulness, context relevance, answer relevance, and cross-source consistency.

@@ -1,0 +1,15 @@
+{
+  "top_1_accuracy": 0.8352741901333898,
+  "top_3_accuracy": 0.9509845437222104,
+  "top_5_accuracy": 0.9763391911920389,
+  "validation_inference_seconds": 1.8870440418832004,
+  "average_inference_ms_per_sample": 0.09988587983713743,
+  "training_seconds": 1.3398103341460228,
+  "training_samples": 151136,
+  "validation_samples": 18892,
+  "number_of_symptoms": 320,
+  "number_of_diseases": 587,
+  "model_name": "gaussian_naive_bayes",
+  "var_smoothing": 1e-09,
+  "model_size_mb": 0.0775909423828125
+}

@@ -1,0 +1,30 @@
+dataset:
+  name: "dhivyeshrk/Disease-Symptom-Extensive-Clean"
+  revision: "5f2080be444ba0f43c48b923ffc62d3e3b4897f5"
+  split: "train"
+  target_column: "diseases"
+
+preprocessing:
+  random_seed: 42
+  train_size: 0.80
+  validation_size: 0.10
+  test_size: 0.10
+  remove_exact_duplicates: true
+  remove_empty_symptom_rows: true
+  drop_constant_symptoms: true
+  minimum_samples_per_disease: 10
+
+model:
+  name: "gaussian_naive_bayes"
+  var_smoothing: 0.000000001
+
+evaluation:
+  top_k:
+    - 1
+    - 3
+    - 5
+
+paths:
+  processed_data_dir: "data/processed"
+  model_path: "models/disease_model.joblib"
+  metrics_path: "models/validation_metrics.json"

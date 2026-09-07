@@ -1,0 +1,7 @@
+datasets>=3.0
+pandas>=2.2
+numpy>=1.26
+scikit-learn>=1.5
+pyarrow>=17.0
+PyYAML>=6.0
+joblib>=1.4

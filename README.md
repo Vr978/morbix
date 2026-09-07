@@ -145,7 +145,7 @@ Python 3.10 or newer is recommended.
 ### 1. Clone the repository
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/Vr978/morbix.git
 cd Morbix
 ```
 
